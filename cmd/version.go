@@ -4,7 +4,6 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"runtime"
 	"text/template"
@@ -73,10 +72,4 @@ func init() {
 	rootCmd.AddCommand(versionCmd)
 }
 
-func jsonMarshal(data interface{}) string {
-	res, err := json.Marshal(data)
-	if err != nil {
-		return ""
-	}
-	return string(res)
-}
+func jsonMarshal(data interface{}) string { _ = "STUB: not implemented"; return "" }

@@ -10,13 +10,11 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
 	"github.com/chanify/chanify/core"
 	"github.com/chanify/chanify/logic"
-	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -108,87 +106,17 @@ func init() {
 	viper.BindPFlag("server.register.enable", serveCmd.Flags().Lookup("registerable"))   // nolint: errcheck
 }
 
-func getName() string {
-	name := viper.GetString("server.name")
-	if len(name) <= 0 {
-		name = viper.GetString("server.hostname")
-		if len(name) <= 0 {
-			name = viper.GetString("server.host")
-		}
-	}
-	return name
-}
+func getName() string { _ = "STUB: not implemented"; return "" }
 
-func getExpandPath(key string) string {
-	path := viper.GetString(key)
-	if len(path) > 0 {
-		if p, err := homedir.Expand(path); err == nil {
-			path = p
-		}
-	}
-	return path
-}
+func getExpandPath(key string) string { _ = "STUB: not implemented"; return "" }
 
-func getEndpoint() string {
-	endpoint := viper.GetString("server.endpoint")
-	if len(endpoint) <= 0 {
-		hostname := viper.GetString("server.hostname")
-		if len(hostname) <= 0 {
-			hostname = viper.GetString("server.host")
-		}
-		if len(hostname) > 0 {
-			port := viper.GetInt("server.port")
-			if port == 80 {
-				endpoint = "http://" + hostname
-			} else if port == 443 {
-				endpoint = "https://" + hostname
-			} else {
-				endpoint = fmt.Sprintf("http://%s:%d", hostname, port)
-			}
-		}
-	}
-	return endpoint
-}
+func getEndpoint() string { _ = "STUB: not implemented"; return "" }
 
 func getUserWhitlist(cmd *cobra.Command) (bool, []string) {
-	if viper.GetBool("server.register.enable") {
-		return true, nil
-	}
-	users := []string{}
-	if wl, err := cmd.Flags().GetString("whitelist"); err == nil && len(wl) > 0 {
-		users = strings.Split(wl, ",")
-	}
-	return false, append(users, viper.GetStringSlice("server.register.whitelist")...)
+	_ = "STUB: not implemented"
+	return false, nil
 }
 
-func getWebhooks() []map[string]interface{} {
-	plugin := viper.GetStringMap("server.plugin")
-	if whs, ok := plugin["webhook"]; ok {
-		if whss, ok := whs.([]interface{}); ok {
-			ret := []map[string]interface{}{}
-			for _, wh := range whss {
-				ww := map[string]interface{}{}
-				if webhook, ok := wh.(map[interface{}]interface{}); ok {
-					for k, v := range webhook {
-						if key, ok := k.(string); ok {
-							ww[key] = v
-						}
-					}
-				}
-				if len(ww) > 0 {
-					ret = append(ret, ww)
-				}
-			}
-			return ret
-		}
-	}
-	return nil
-}
+func getWebhooks() []map[string]interface{} { _ = "STUB: not implemented"; return nil }
 
-func parseDuration(dur string) time.Duration {
-	d, err := time.ParseDuration(dur)
-	if err != nil {
-		return 10 * time.Second
-	}
-	return d
-}
+func parseDuration(dur string) time.Duration { _ = "STUB: not implemented"; return *new(time.Duration) }

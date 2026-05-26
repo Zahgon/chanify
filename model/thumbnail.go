@@ -8,10 +8,4 @@ type Thumbnail struct {
 }
 
 // NewThumbnail from image width & height
-func NewThumbnail(w int, h int) *Thumbnail {
-	return &Thumbnail{
-		width:   w,
-		height:  h,
-		preview: nil,
-	}
-}
+func NewThumbnail(w int, h int) *Thumbnail { _ = "STUB: not implemented"; return nil }

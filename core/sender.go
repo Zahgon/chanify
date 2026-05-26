@@ -1,14 +1,8 @@
 package core
 
 import (
-	"bytes"
 	"io"
-	"net/http"
-	"path/filepath"
-	"strings"
-	"time"
 
-	"github.com/chanify/chanify/logic"
 	"github.com/chanify/chanify/model"
 	"github.com/gin-gonic/gin"
 )
@@ -18,235 +12,46 @@ type sendContext interface {
 	DataFromReader(code int, contentLength int64, contentType string, reader io.Reader, extraHeaders map[string]string)
 }
 
-func (c *Core) handleSender(ctx *gin.Context) {
-	token, err := c.parseToken(getToken(ctx))
-	if err != nil {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"res": http.StatusUnauthorized, "msg": "invalid token"})
-		return
-	}
-	text := ctx.Param("msg")
-	if len(text) <= 0 {
-		text = ctx.Query("text")
-		if len(text) <= 0 {
-			ctx.JSON(http.StatusBadRequest, gin.H{"res": http.StatusNoContent, "msg": "no message content"})
-			return
-		}
-	}
-	msg := model.NewMessage(token)
-	msg, err = c.makeTextContent(msg, text, ctx.Query("title"), ctx.Query("copy"), ctx.Query("autocopy"), ctx.QueryArray("action"))
-	if err != nil {
-		ctx.JSON(http.StatusRequestEntityTooLarge, gin.H{"res": http.StatusRequestEntityTooLarge, "msg": "too large text content"})
-		return
-	}
-	c.sendMsg(ctx, token, msg.SoundName(ctx.Query("sound")).SetPriority(parsePriority(ctx.Query("priority"))).SetInterruptionLevel(ctx.Query("interruption-level")))
-}
-func (c *Core) handlePostSender(ctx *gin.Context) {
-	params := &MsgParam{}
-	params.Token, _ = c.parseToken(getToken(ctx))
-	params.Link = ctx.Query("link")
-	params.Title = ctx.Query("title")
-	params.Sound = ctx.Query("sound")
-	params.AutoCopy = ctx.Query("autocopy")
-	params.CopyText = ctx.Query("copy")
-	params.Filename = fileBaseName(ctx.Query("filename"))
-	params.Priority = parsePriority(ctx.Query("priority"))
-	params.InterruptionLevel = ctx.Query("interruption-level")
-	params.TimeContent.Code = ctx.Query("timeline-code")
+func (c *Core) handleSender(ctx *gin.Context) { _ = "STUB: not implemented"; return }
 
-	var err error
-	var msg *model.Message = nil
-	var parser func(c *Core, ctx *gin.Context) (*model.Message, error) = nil
-
-	ctype := ctx.Query("content-type")
-	if len(ctype) <= 0 {
-		ctype = ctx.ContentType()
-	}
-	switch ctype {
-	case "text/plain", "text":
-		params.ParsePlainText(ctx)
-	case "application/json", "json":
-		params.ParseJSON(c, ctx)
-	case "multipart/form-data":
-		parser = params.ParseFormData
-	case "image/png", "image/jpeg":
-		parser = params.ParseImage
-	case "audio/mpeg":
-		parser = params.ParseAudio
-	default:
-		params.ParseForm(c, ctx)
-	}
-	if parser != nil {
-		msg, err = parser(c, ctx)
-		if err != nil {
-			return
-		}
-	}
-	if params.Token == nil {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"res": http.StatusUnauthorized, "msg": "invalid token format"})
-		return
-	}
-	if msg == nil {
-		if len(params.Link) > 0 {
-			msg = model.NewMessage(params.Token).LinkContent(params.Link)
-		} else if len(params.TimeContent.Code) > 0 {
-			msg = model.NewMessage(params.Token).TimelineContent(params.TimeContent.Code, params.Title, params.TimeContent.Timestamp, params.TimeContent.Items)
-		} else if len(params.Text) <= 0 {
-			ctx.JSON(http.StatusNoContent, gin.H{"res": http.StatusNoContent, "msg": "no message content"})
-			return
-		} else {
-			var err error
-			msg, err = c.makeTextContent(model.NewMessage(params.Token), params.Text, params.Title, params.CopyText, params.AutoCopy, params.Actions)
-			if err != nil {
-				ctx.JSON(http.StatusRequestEntityTooLarge, gin.H{"res": http.StatusRequestEntityTooLarge, "msg": "too large text content"})
-				return
-			}
-		}
-	}
-	c.sendMsg(ctx, params.Token, msg.SoundName(params.Sound).SetPriority(params.Priority).SetInterruptionLevel(params.InterruptionLevel))
-}
+func (c *Core) handlePostSender(ctx *gin.Context) { _ = "STUB: not implemented"; return }
 
 func (c *Core) sendDirect(ctx sendContext, token *model.Token, msg *model.Message) {
-	uid := token.GetUserID()
-	key, err := c.logic.GetUserKey(uid)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"res": http.StatusBadRequest, "msg": "invalid user"})
-		return
-	}
-	devs, err := c.logic.GetDevices(uid)
-	if err != nil || len(devs) <= 0 {
-		ctx.JSON(http.StatusNotFound, gin.H{"res": http.StatusNotFound, "msg": "no devices found"})
-		return
-	}
-	out := msg.EncryptData(key, uint64(time.Now().UTC().UnixNano()))
-	if len(out) > 4000 {
-		ctx.JSON(http.StatusRequestEntityTooLarge, gin.H{"res": http.StatusRequestEntityTooLarge, "msg": "message body too large"})
-		return
-	}
-	uuid, n := c.logic.SendAPNS(uid, out, devs, int(msg.Priority), "passive", msg.IsTimeline())
-	if n <= 0 {
-		ctx.JSON(http.StatusNotFound, gin.H{"res": http.StatusNotFound, "msg": "no devices send success"})
-		return
-	}
-	ctx.JSON(http.StatusOK, gin.H{"request-uid": uuid})
+	_ = "STUB: not implemented"
+	return
 }
 
 func (c *Core) sendForward(ctx sendContext, token *model.Token, msg *model.Message) {
-	msg.DisableToken()
-	key, err := c.logic.GetUserKey(token.GetUserID())
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"res": http.StatusBadRequest, "msg": "invalid user"})
-		return
-	}
-	msg.EncryptContent(key)
-	resp, err := http.Post(logic.APIEndpoint+"/rest/v1/push?token="+token.RawToken(), "application/x-protobuf", bytes.NewReader(msg.Marshal()))
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"res": http.StatusInternalServerError, "msg": "send message failed"})
-		return
-	}
-	reader := resp.Body
-	defer reader.Close()
-	ctx.DataFromReader(resp.StatusCode, resp.ContentLength, resp.Header.Get("Content-Type"), reader, map[string]string{})
+	_ = "STUB: not implemented"
+	return
 }
 
 func (c *Core) sendMsg(ctx sendContext, token *model.Token, msg *model.Message) {
-	u, err := c.logic.GetUser(token.GetUserID())
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"res": http.StatusBadRequest, "msg": "invalid user"})
-		return
-	}
-	if u.IsServerless() {
-		c.sendForward(ctx, token, msg)
-		return
-	}
-	c.sendDirect(ctx, token, msg)
+	_ = "STUB: not implemented"
+	return
 }
 
 func (c *Core) saveUploadImage(ctx *gin.Context, token *model.Token, data []byte) (*model.Message, error) {
-	if len(data) <= 0 {
-		ctx.JSON(http.StatusNoContent, gin.H{"res": http.StatusNoContent, "msg": "no image content"})
-		return nil, ErrNoContent
-	}
-	path, err := c.logic.SaveFile("images", data)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"res": http.StatusBadRequest, "msg": "invalid image content"})
-		return nil, ErrInvalidContent
-	}
-	return model.NewMessage(token).ImageContent(path, createThumbnail(data), len(data)), nil
+	_ = "STUB: not implemented"
+	return nil, nil
 }
 
 func (c *Core) saveUploadAudio(ctx *gin.Context, token *model.Token, fname string, title string, data []byte) (*model.Message, error) {
-	if len(data) <= 0 {
-		ctx.JSON(http.StatusNoContent, gin.H{"res": http.StatusNoContent, "msg": "no audio content"})
-		return nil, ErrNoContent
-	}
-	path, err := c.logic.SaveFile("audios", data)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"res": http.StatusBadRequest, "msg": "invalid audio content"})
-		return nil, ErrInvalidContent
-	}
-	return model.NewMessage(token).AudioContent(path, fname, title, 0, len(data)), nil
+	_ = "STUB: not implemented"
+	return nil, nil
 }
 
 func (c *Core) saveUploadFile(ctx *gin.Context, token *model.Token, data []byte, filename string, desc string, actions []string) (*model.Message, error) {
-	if len(data) <= 0 {
-		ctx.JSON(http.StatusNoContent, gin.H{"res": http.StatusNoContent, "msg": "no file content"})
-		return nil, ErrNoContent
-	}
-	path, err := c.logic.SaveFile("files", data)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"res": http.StatusBadRequest, "msg": "invalid file content"})
-		return nil, ErrInvalidContent
-	}
-	return model.NewMessage(token).FileContent(path, filename, desc, len(data), actions), nil
+	_ = "STUB: not implemented"
+	return nil, nil
 }
 
 func (c *Core) makeTextContent(msg *model.Message, text string, title string, copytext string, autocopy string, actions []string) (*model.Message, error) {
-	var fname string
-	if len(copytext) > 1000 {
-		return nil, ErrTooLargeContent
-	}
-	l := len(title) + len(text)
-	if len(actions) > 4 {
-		actions = actions[:4]
-	}
-	for _, act := range actions {
-		l += len(act)
-	}
-	if l < 2000 {
-		if len(actions) > 0 {
-			return c.makeActionContent(msg, text, title, actions)
-		}
-		return msg.TextContent(text, title, copytext, autocopy), nil
-	}
-	if !c.logic.CanFileStore() {
-		return nil, ErrTooLargeContent
-	}
-	txts := []string{}
-	if len(title) > 0 {
-		txts = append(txts, title)
-		fname = title
-	}
-	if len(text) > 0 {
-		txts = append(txts, text)
-	}
-	data := []byte(strings.Join(txts, "\n\n"))
-	path, err := c.logic.SaveFile("files", data)
-	if err != nil {
-		return nil, err
-	}
-	if len(title) > 100 {
-		fname = string([]rune(title)[:100])
-		title = fname + "⋯"
-	}
-	if len(fname) > 0 {
-		fname = strings.ReplaceAll(filepath.Base(fname), ".", "")
-	}
-	if len(fname) <= 0 {
-		fname = "text"
-	}
-	return msg.TextFileContent(path, fname+".txt", title, string([]rune(text)[:100])+"⋯", len(data), actions), nil
+	_ = "STUB: not implemented"
+	return nil, nil
 }
 
 func (c *Core) makeActionContent(msg *model.Message, text string, title string, actions []string) (*model.Message, error) {
-	return msg.ActionContent(text, title, actions), nil
+	_ = "STUB: not implemented"
+	return nil, nil
 }

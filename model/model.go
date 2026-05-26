@@ -2,7 +2,6 @@ package model
 
 import (
 	"errors"
-	"strings"
 
 	"github.com/chanify/chanify/pb"
 	"google.golang.org/protobuf/proto"
@@ -52,14 +51,4 @@ func init() {
 }
 
 // InitDB with DSN
-func InitDB(dsn string) (DB, error) {
-	dsnItems := strings.Split(dsn, "://")
-	if len(dsnItems) <= 1 {
-		return nil, ErrInvalidDSN
-	}
-	dbOpen, ok := drivers[strings.ToLower(dsnItems[0])]
-	if !ok {
-		return nil, ErrDriverNotFound
-	}
-	return dbOpen(dsn)
-}
+func InitDB(dsn string) (DB, error) { _ = "STUB: not implemented"; return *new(DB), nil }

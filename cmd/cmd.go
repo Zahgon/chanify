@@ -4,10 +4,6 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
-
-	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -20,12 +16,7 @@ var rootCmd = &cobra.Command{
 }
 
 // Execute command
-func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-}
+func Execute() { _ = "STUB: not implemented"; return }
 
 func init() {
 	cobra.OnInitialize(initConfig)
@@ -35,24 +26,4 @@ func init() {
 	viper.BindPFlag("config.verbose", rootCmd.PersistentFlags().Lookup("verbose")) // nolint: errcheck
 }
 
-func initConfig() {
-	if cfgFile != "" {
-		viper.SetConfigFile(cfgFile)
-	} else {
-		home, err := homedir.Dir()
-		if err != nil {
-			fmt.Println("Error:", err)
-			os.Exit(1)
-		}
-		viper.AddConfigPath(home)
-		viper.SetConfigName(".chanify")
-	}
-	viper.AutomaticEnv()
-	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-			fmt.Println("Parse config file", viper.ConfigFileUsed(), "failed:", err)
-		}
-	} else if viper.GetBool("config.verbose") {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
-	}
-}
+func initConfig() { _ = "STUB: not implemented"; return }

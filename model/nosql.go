@@ -2,7 +2,6 @@ package model
 
 import (
 	"crypto/sha256"
-	"crypto/sha512"
 	"net/url"
 
 	"github.com/chanify/chanify/crypto"
@@ -27,55 +26,43 @@ func init() {
 	}
 }
 
-func (s *nosql) Close() {
-}
+func (s *nosql) Close() { _ = "STUB: not implemented"; return }
 
 func (s *nosql) GetOption(key string, value interface{}) error {
-	if key == "secret" {
-		*(value.(*[]byte)) = s.seckey
-		return nil
-	}
-	return ErrNotImplemented
+	_ = "STUB: not implemented"
+	return nil
 }
 
 func (s *nosql) SetOption(key string, value interface{}) error {
-	return ErrNotImplemented
+	_ = "STUB: not implemented"
+	return nil
 }
 
-func (s *nosql) GetUser(uid string) (*User, error) {
-	data, err := crypto.Base32Encode.DecodeString(uid)
-	if err != nil {
-		return nil, err
-	}
-	h := sha512.New()
-	h.Write(s.secret) // nolint: errcheck
-	h.Write(data)     // nolint: errcheck
-	return &User{
-		UID:       uid,
-		SecretKey: h.Sum(nil),
-	}, nil
-}
+func (s *nosql) GetUser(uid string) (*User, error) { _ = "STUB: not implemented"; return nil, nil }
 
-func (s *nosql) UpsertUser(u *User) error {
-	return ErrNotImplemented
-}
+// nolint: errcheck
+// nolint: errcheck
+
+func (s *nosql) UpsertUser(u *User) error { _ = "STUB: not implemented"; return nil }
 
 func (s *nosql) BindDevice(uid string, uuid string, key []byte, devType int) error {
-	return ErrNotImplemented
+	_ = "STUB: not implemented"
+	return nil
 }
 
-func (s *nosql) UnbindDevice(uid string, uuid string) error {
-	return ErrNotImplemented
-}
+func (s *nosql) UnbindDevice(uid string, uuid string) error { _ = "STUB: not implemented"; return nil }
 
 func (s *nosql) UpdatePushToken(uid string, uuid string, token []byte, sandbox bool) error {
-	return ErrNotImplemented
+	_ = "STUB: not implemented"
+	return nil
 }
 
 func (s *nosql) GetDeviceKey(uuid string) ([]byte, error) {
-	return nil, ErrNotImplemented
+	_ = "STUB: not implemented"
+	return nil, nil
 }
 
 func (s *nosql) GetDevices(uid string) ([]*Device, error) {
-	return nil, ErrNotImplemented
+	_ = "STUB: not implemented"
+	return nil, nil
 }

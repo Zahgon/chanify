@@ -1,7 +1,5 @@
 package model
 
-import "github.com/chanify/chanify/crypto"
-
 // User information
 type User struct {
 	UID       string
@@ -11,30 +9,15 @@ type User struct {
 }
 
 // IsServerless for user configuration
-func (u *User) IsServerless() bool {
-	return (u.Flags&0x01 == 0)
-}
+func (u *User) IsServerless() bool { _ = "STUB: not implemented"; return false }
 
 // SetServerless for user configuration
-func (u *User) SetServerless(s bool) {
-	if s {
-		u.Flags &= ^uint(0x01)
-	} else {
-		u.Flags |= uint(0x01)
-	}
-}
+func (u *User) SetServerless(s bool) { _ = "STUB: not implemented"; return }
 
 // GetPublicKeyString return the user public key
-func (u *User) GetPublicKeyString() string {
-	return crypto.Base64Encode.EncodeToString(u.PublicKey)
-}
+func (u *User) GetPublicKeyString() string { _ = "STUB: not implemented"; return "" }
 
 // PublicKeyEncrypt return encrypted public key
-func (u *User) PublicKeyEncrypt(data []byte) []byte {
-	pk, err := crypto.LoadPublicKey(u.PublicKey)
-	if err != nil {
-		return []byte{}
-	}
-	out, _ := pk.Encrypt(data) // nolint: errcheck
-	return out
-}
+func (u *User) PublicKeyEncrypt(data []byte) []byte { _ = "STUB: not implemented"; return nil }
+
+// nolint: errcheck
